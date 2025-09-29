@@ -40,9 +40,6 @@ export function LoginForm() {
             Kembali ke Beranda
           </Link>
           
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-green-600 to-emerald-600 rounded-full mb-4 sm:mb-6">
-            <Lock className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-          </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
             Login Guru
           </h2>

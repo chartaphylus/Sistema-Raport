@@ -27,9 +27,31 @@ export function SearchRaport() {
     }
   };
 
-  const handleDownload = (raport: RaportData) => {
-    window.open(raport.file_pdf, '_blank');
+  const handleDownload = async (raport: RaportData) => {
+    try {
+      // Ambil file dari URL Supabase
+      const response = await fetch(raport.file_pdf, {
+        mode: "cors"
+      });
+      const blob = await response.blob();
+
+      // Buat link download dari blob
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = raport.nama_file || "raport.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Bersihkan memory
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Gagal download:", error);
+    }
   };
+
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('id-ID', {

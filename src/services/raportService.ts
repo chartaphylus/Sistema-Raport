@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import { formatStudentName, extractZipFile } from '../utils/fileProcessing';
 
 export interface RaportData {
+  nama_file: string;
   id: string;
   nama: string;
   file_pdf: string;
