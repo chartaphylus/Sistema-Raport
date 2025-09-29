@@ -18,51 +18,75 @@ export interface TunggakanData {
   created_at: string;
 }
 
-export async function getAvailableRaports(): Promise<RaportData[]> {
+/**
+ * Ambil raport yang tidak punya tunggakan
+ */
+export async function getAvailableRaports(
+  page = 1,
+  limit = 10,
+  kelasFilter = '',
+  searchQuery = ''
+): Promise<{ data: RaportData[]; total: number }> {
   // Ambil semua raport
-  const { data: raports, error: raportError } = await supabase
+  let query = supabase
     .from('raport')
-    .select('*')
-    .order('nama');
+    .select('*', { count: 'exact' })
+    .order('nama', { ascending: true });
 
-  if (raportError) throw raportError;
+  if (kelasFilter) {
+    query = query.eq('kelas', kelasFilter);
+  }
 
-  // Ambil semua tunggakan
+  if (searchQuery) {
+    query = query.ilike('nama', `%${searchQuery}%`);
+  }
+
+  // Pagination
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+  query = query.range(from, to);
+
+  const { data: raports, error, count } = await query;
+  if (error) throw error;
+
+  // Ambil semua data tunggakan
   const { data: tunggakan, error: tunggakanError } = await supabase
     .from('tunggakan')
     .select('nama, kelas');
 
   if (tunggakanError) throw tunggakanError;
 
-  // ✅ Gunakan kombinasi nama + kelas untuk filter
-  const studentsWithTunggakan = new Set(
-    tunggakan?.map(t => `${t.nama.toLowerCase()}-${t.kelas.toLowerCase()}`) || []
+  // Buat set key unik: nama+kelas
+  const tunggakanSet = new Set(
+    (tunggakan || []).map((t) => `${t.nama.toLowerCase()}|${t.kelas.toLowerCase()}`)
   );
 
-  const availableRaports = raports?.filter(raport =>
-    !studentsWithTunggakan.has(`${raport.nama.toLowerCase()}-${raport.kelas.toLowerCase()}`)
-  ) || [];
+  // Filter raport yang tidak ada tunggakan
+  const availableRaports =
+    raports?.filter(
+      (r) => !tunggakanSet.has(`${r.nama.toLowerCase()}|${r.kelas.toLowerCase()}`)
+    ) || [];
 
-  return availableRaports;
+  return { data: availableRaports, total: count || 0 };
 }
 
-export async function searchRaports(query: string): Promise<RaportData[]> {
-  const raports = await getAvailableRaports();
-
-  if (!query.trim()) return raports;
-
-  const searchTerm = query.toLowerCase().trim();
-
-  // ✅ Bisa cari berdasarkan nama atau kelas
-  return raports.filter(raport =>
-    raport.nama.toLowerCase().includes(searchTerm) ||
-    raport.kelas.toLowerCase().includes(searchTerm)
-  );
+/**
+ * Search raport (dipanggil dari SearchRaport.tsx)
+ */
+export async function searchRaports(
+  query: string,
+  page = 1,
+  limit = 10,
+  kelasFilter = ''
+): Promise<{ data: RaportData[]; total: number }> {
+  return getAvailableRaports(page, limit, kelasFilter, query);
 }
 
+/**
+ * Upload file PDF raport ke storage
+ */
 export async function uploadRaportFile(file: File, studentName: string, kelas: string): Promise<string> {
   const filename = `${Date.now()}-${studentName.replace(/\s+/g, '_')}.pdf`;
-  // ✅ Simpan ke folder sesuai kelas
   const filePath = `raports/${kelas}/${filename}`;
 
   const { error } = await supabase.storage
@@ -78,20 +102,20 @@ export async function uploadRaportFile(file: File, studentName: string, kelas: s
   return publicUrl;
 }
 
+/**
+ * Simpan metadata raport ke database
+ */
 export async function saveRaportToDatabase(nama: string, kelas: string, fileUrl: string): Promise<void> {
   const { error } = await supabase
     .from('raport')
-    .insert([
-      {
-        nama,
-        kelas,
-        file_pdf: fileUrl,
-      },
-    ]);
+    .insert([{ nama, kelas, file_pdf: fileUrl }]);
 
   if (error) throw error;
 }
 
+/**
+ * Ambil semua tunggakan
+ */
 export async function getTunggakan(): Promise<TunggakanData[]> {
   const { data, error } = await supabase
     .from('tunggakan')
@@ -102,20 +126,20 @@ export async function getTunggakan(): Promise<TunggakanData[]> {
   return data || [];
 }
 
+/**
+ * Tambahkan data tunggakan
+ */
 export async function addTunggakan(nama: string, jumlah: number, kelas: string): Promise<void> {
   const { error } = await supabase
     .from('tunggakan')
-    .insert([
-      {
-        nama,
-        jumlah_tunggakan: jumlah,
-        kelas,
-      },
-    ]);
+    .insert([{ nama, jumlah_tunggakan: jumlah, kelas }]);
 
   if (error) throw error;
 }
 
+/**
+ * Hapus data tunggakan
+ */
 export async function deleteTunggakan(id: string): Promise<void> {
   const { error } = await supabase
     .from('tunggakan')
@@ -125,14 +149,15 @@ export async function deleteTunggakan(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Upload ZIP berisi raport
+ */
 export async function processZipUpload(zipFile: File, kelas: string): Promise<{ success: number; errors: string[] }> {
   const results = { success: 0, errors: [] as string[] };
 
   try {
-    // Extract PDF files dari ZIP
     const pdfFiles = await extractZipFile(zipFile);
 
-    // Proses tiap PDF
     for (const pdfFile of pdfFiles) {
       try {
         const studentName = formatStudentName(pdfFile.name);
@@ -140,11 +165,15 @@ export async function processZipUpload(zipFile: File, kelas: string): Promise<{ 
         await saveRaportToDatabase(studentName, kelas, fileUrl);
         results.success++;
       } catch (error) {
-        results.errors.push(`Error processing ${pdfFile.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        results.errors.push(
+          `Error processing ${pdfFile.name}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
     }
   } catch (error) {
-    results.errors.push(`Error extracting ZIP file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    results.errors.push(
+      `Error extracting ZIP file: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 
   return results;

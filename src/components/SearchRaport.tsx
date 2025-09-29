@@ -8,22 +8,22 @@ export function SearchRaport() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [kelasFilter, setKelasFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(6);
+  const [total, setTotal] = useState(0);
 
-  // Jalankan search saat pertama kali dan ketika filter kelas berubah
   useEffect(() => {
     handleSearch();
-  }, [kelasFilter]);
+  }, [kelasFilter, page, limit]);
 
   const handleSearch = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const results = await searchRaports(query);
-      const filtered = kelasFilter
-        ? results.filter((r) => r.kelas === kelasFilter)
-        : results;
-      setRaports(filtered);
+      const { data, total } = await searchRaports(query, page, limit, kelasFilter);
+      setRaports(data);
+      setTotal(total);
     } catch (err) {
       setError('Gagal memuat data raport. Silakan coba lagi.');
       console.error('Search error:', err);
@@ -57,6 +57,8 @@ export function SearchRaport() {
     });
   };
 
+  const totalPages = Math.ceil(total / limit);
+
   return (
     <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12">
       <div className="text-center mb-12">
@@ -74,7 +76,8 @@ export function SearchRaport() {
       <div className="bg-white rounded-2xl shadow-xl border border-green-100 overflow-hidden">
         <div className="p-4 sm:p-8">
           {/* Search + Dropdown */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 mb-6 sm:mb-8">
+          {/* 🔍 Search + Filter */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6 gap-4 mb-6">
             {/* Search Box */}
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
@@ -89,7 +92,10 @@ export function SearchRaport() {
                 className="block w-full pl-10 sm:pl-12 pr-16 sm:pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base sm:text-lg placeholder-gray-400 bg-gray-50 focus:bg-white transition-all"
               />
               <button
-                onClick={handleSearch}
+                onClick={() => {
+                  setPage(1);
+                  handleSearch();
+                }}
                 disabled={loading}
                 className="absolute inset-y-0 right-0 px-3 sm:px-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-r-xl hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 transition-all font-medium text-sm sm:text-base"
               >
@@ -101,7 +107,10 @@ export function SearchRaport() {
             <div className="w-full sm:w-48">
               <select
                 value={kelasFilter}
-                onChange={(e) => setKelasFilter(e.target.value)}
+                onChange={(e) => {
+                  setPage(1);
+                  setKelasFilter(e.target.value);
+                }}
                 className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm sm:text-base bg-gray-50 focus:bg-white transition-all"
               >
                 <option value="">Semua Kelas</option>
@@ -113,6 +122,22 @@ export function SearchRaport() {
                 <option value="10B">10B</option>
                 <option value="11">11</option>
                 <option value="12">12</option>
+              </select>
+            </div>
+
+            {/* Dropdown limit */}
+            <div className="w-full sm:w-40">
+              <select
+                value={limit}
+                onChange={(e) => {
+                  setPage(1);
+                  setLimit(Number(e.target.value));
+                }}
+                className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm sm:text-base bg-gray-50 focus:bg-white transition-all"
+              >
+                <option value={6}>6 per halaman</option>
+                <option value={10}>10 per halaman</option>
+                <option value={20}>20 per halaman</option>
               </select>
             </div>
           </div>
@@ -139,7 +164,7 @@ export function SearchRaport() {
                 <div className="flex items-center mb-4 sm:mb-6">
                   <Users className="w-5 h-5 text-green-600 mr-2" />
                   <span className="text-gray-700 font-medium text-sm sm:text-base">
-                    Ditemukan {raports.length} raport santri
+                    Ditemukan {total} raport santri
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -171,6 +196,29 @@ export function SearchRaport() {
                     </div>
                   ))}
                 </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 pt-4 border-t border-gray-200">
+                    <button
+                      disabled={page === 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      className="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Prev
+                    </button>
+                    <span className="text-sm font-medium">
+                      Halaman {page} dari {totalPages}
+                    </span>
+                    <button
+                      disabled={page === totalPages}
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      className="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </>
             ) : query && !loading ? (
               <div className="text-center py-12">
