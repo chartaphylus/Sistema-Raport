@@ -139,15 +139,15 @@ export function TeacherDashboard() {
       {uploadMessage && (
         <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg flex items-start ${
           uploadMessage.type === 'success' 
-            ? 'bg-green-50 border border-green-200' 
+            ? 'bg-blue-50 border border-green-200' 
             : 'bg-red-50 border border-red-200'
         }`}>
           {uploadMessage.type === 'success' ? (
-            <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
+            <CheckCircle className="w-5 h-5 text-blue-500 mr-3" />
           ) : (
             <AlertCircle className="w-5 h-5 text-red-500 mr-3" />
           )}
-          <span className={`text-sm sm:text-base ${uploadMessage.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
+          <span className={`text-sm sm:text-base ${uploadMessage.type === 'success' ? 'text-blue-700' : 'text-red-700'}`}>
             {uploadMessage.message}
           </span>
         </div>

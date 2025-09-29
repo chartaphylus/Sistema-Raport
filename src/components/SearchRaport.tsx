@@ -7,21 +7,21 @@ export function SearchRaport() {
   const [raports, setRaports] = useState<RaportData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [kelasFilter, setKelasFilter] = useState(''); // ⬅️ state baru
+  const [kelasFilter, setKelasFilter] = useState('');
 
+  // Jalankan search saat pertama kali dan ketika filter kelas berubah
   useEffect(() => {
     handleSearch();
-  }, []);
+  }, [kelasFilter]);
 
   const handleSearch = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const results = await searchRaports(query);
-      // filter by kelas kalau dropdown dipilih
-      const filtered = kelasFilter 
-        ? results.filter(r => r.kelas === kelasFilter) 
+      const filtered = kelasFilter
+        ? results.filter((r) => r.kelas === kelasFilter)
         : results;
       setRaports(filtered);
     } catch (err) {
@@ -34,18 +34,18 @@ export function SearchRaport() {
 
   const handleDownload = async (raport: RaportData) => {
     try {
-      const response = await fetch(raport.file_pdf, { mode: "cors" });
+      const response = await fetch(raport.file_pdf, { mode: 'cors' });
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = url;
-      link.download = raport.nama_file || "raport.pdf";
+      link.download = raport.nama_file || 'raport.pdf';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Gagal download:", error);
+      console.error('Gagal download:', error);
     }
   };
 
@@ -75,6 +75,7 @@ export function SearchRaport() {
         <div className="p-4 sm:p-8">
           {/* Search + Dropdown */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 mb-6 sm:mb-8">
+            {/* Search Box */}
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
@@ -97,21 +98,23 @@ export function SearchRaport() {
             </div>
 
             {/* Dropdown kelas */}
-            <select
-              value={kelasFilter}
-              onChange={(e) => setKelasFilter(e.target.value)}
-              className="mt-3 sm:mt-0 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm sm:text-base"
-            >
-              <option value="">Semua Kelas</option>
-              <option value="7A">7A</option>
-              <option value="7B">7B</option>
-              <option value="8">8</option>
-              <option value="9">9</option>
-              <option value="10A">10A</option>
-              <option value="10B">10B</option>
-              <option value="11">11</option>
-              <option value="12">12</option>
-            </select>
+            <div className="w-full sm:w-48">
+              <select
+                value={kelasFilter}
+                onChange={(e) => setKelasFilter(e.target.value)}
+                className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm sm:text-base bg-gray-50 focus:bg-white transition-all"
+              >
+                <option value="">Semua Kelas</option>
+                <option value="7A">7A</option>
+                <option value="7B">7B</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10A">10A</option>
+                <option value="10B">10B</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+              </select>
+            </div>
           </div>
 
           {error && (
