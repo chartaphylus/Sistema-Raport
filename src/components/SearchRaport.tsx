@@ -7,6 +7,7 @@ export function SearchRaport() {
   const [raports, setRaports] = useState<RaportData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [kelasFilter, setKelasFilter] = useState(''); // ⬅️ state baru
 
   useEffect(() => {
     handleSearch();
@@ -18,7 +19,11 @@ export function SearchRaport() {
     
     try {
       const results = await searchRaports(query);
-      setRaports(results);
+      // filter by kelas kalau dropdown dipilih
+      const filtered = kelasFilter 
+        ? results.filter(r => r.kelas === kelasFilter) 
+        : results;
+      setRaports(filtered);
     } catch (err) {
       setError('Gagal memuat data raport. Silakan coba lagi.');
       console.error('Search error:', err);
@@ -29,13 +34,8 @@ export function SearchRaport() {
 
   const handleDownload = async (raport: RaportData) => {
     try {
-      // Ambil file dari URL Supabase
-      const response = await fetch(raport.file_pdf, {
-        mode: "cors"
-      });
+      const response = await fetch(raport.file_pdf, { mode: "cors" });
       const blob = await response.blob();
-
-      // Buat link download dari blob
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -43,15 +43,11 @@ export function SearchRaport() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
-      // Bersihkan memory
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Gagal download:", error);
     }
   };
-
-
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('id-ID', {
@@ -68,35 +64,54 @@ export function SearchRaport() {
           <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
         </div>
         <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">
-          Cari Raport Santri
+          Cari Raport Santri Rabbaani Islamic School
         </h1>
         <p className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto px-4">
           Masukkan nama santri untuk mencari dan mengunduh raport. 
-          <span className="text-green-600 font-medium"> the Real Report</span>
         </p>
       </div>
 
       <div className="bg-white rounded-2xl shadow-xl border border-green-100 overflow-hidden">
         <div className="p-4 sm:p-8">
-          <div className="relative mb-6 sm:mb-8">
-            <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+          {/* Search + Dropdown */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 mb-6 sm:mb-8">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Masukkan nama santri..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="block w-full pl-10 sm:pl-12 pr-16 sm:pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base sm:text-lg placeholder-gray-400 bg-gray-50 focus:bg-white transition-all"
+              />
+              <button
+                onClick={handleSearch}
+                disabled={loading}
+                className="absolute inset-y-0 right-0 px-3 sm:px-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-r-xl hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 transition-all font-medium text-sm sm:text-base"
+              >
+                {loading ? 'Mencari...' : 'Cari'}
+              </button>
             </div>
-            <input
-              type="text"
-              placeholder="Masukkan nama santri..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="block w-full pl-10 sm:pl-12 pr-16 sm:pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base sm:text-lg placeholder-gray-400 bg-gray-50 focus:bg-white transition-all"
-            />
-            <button
-              onClick={handleSearch}
-              disabled={loading}
-              className="absolute inset-y-0 right-0 px-3 sm:px-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-r-xl hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 transition-all font-medium text-sm sm:text-base"
+
+            {/* Dropdown kelas */}
+            <select
+              value={kelasFilter}
+              onChange={(e) => setKelasFilter(e.target.value)}
+              className="mt-3 sm:mt-0 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm sm:text-base"
             >
-              {loading ? 'Mencari...' : 'Cari'}
-            </button>
+              <option value="">Semua Kelas</option>
+              <option value="7A">7A</option>
+              <option value="7B">7B</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10A">10A</option>
+              <option value="10B">10B</option>
+              <option value="11">11</option>
+              <option value="12">12</option>
+            </select>
           </div>
 
           {error && (
@@ -106,6 +121,7 @@ export function SearchRaport() {
             </div>
           )}
 
+          {/* Hasil */}
           <div className="space-y-4">
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -134,6 +150,9 @@ export function SearchRaport() {
                           <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 break-words">
                             {raport.nama}
                           </h3>
+                          <h5 className="text-sm sm:text-base font-medium text-gray-700 mb-2">
+                            Kelas: {raport.kelas}
+                          </h5>
                           <p className="text-sm text-gray-600 mb-3">
                             Diunggah: {formatDate(raport.created_at)}
                           </p>
