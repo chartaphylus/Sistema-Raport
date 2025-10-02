@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Users, DollarSign, FileText, Plus, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
 import { getTunggakan, addTunggakan, deleteTunggakan, processZipUpload, type TunggakanData } from '../services/raportService';
+import { Link } from "react-router-dom";
 
 export function TeacherDashboard() {
   const [tunggakanList, setTunggakanList] = useState<TunggakanData[]>([]);
@@ -135,6 +136,16 @@ export function TeacherDashboard() {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Dashboard Guru</h1>
         <p className="text-sm sm:text-base text-gray-600">Kelola upload raport dan data tunggakan santri</p>
       </div>
+
+      {/* Tombol menuju halaman raport */}
+          <Link
+            to="/dashboard/raport"
+            className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium shadow-sm text-sm sm:text-base mb-6"
+          >
+            Lihat Data Raport
+          </Link>
+      <br />
+
 
       {uploadMessage && (
         <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg flex items-start ${

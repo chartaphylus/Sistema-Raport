@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { GraduationCap, LogOut, Users, FileText, Home } from 'lucide-react';
 
@@ -82,7 +82,7 @@ export function Layout({ children }: LayoutProps) {
       </header>
       
       <main className="flex-1">
-        {children}
+        <Outlet />
       </main>
       
       <footer className="bg-white/60 backdrop-blur-sm border-t border-green-100 mt-16">

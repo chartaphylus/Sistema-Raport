@@ -18,9 +18,7 @@ export interface TunggakanData {
   created_at: string;
 }
 
-/**
- * Ambil raport yang tidak punya tunggakan
- */
+// Ambil raport yang tidak ada tunggakan
 export async function getAvailableRaports(
   page = 1,
   limit = 10,
@@ -70,9 +68,7 @@ export async function getAvailableRaports(
   return { data: availableRaports, total: count || 0 };
 }
 
-/**
- * Search raport (dipanggil dari SearchRaport.tsx)
- */
+// Cari raport berdasarkan nama, kelas, halaman, dan limit
 export async function searchRaports(
   query: string,
   page = 1,
@@ -82,9 +78,19 @@ export async function searchRaports(
   return getAvailableRaports(page, limit, kelasFilter, query);
 }
 
-/**
- * Upload file PDF raport ke storage
- */
+// Cari tunggakan berdasarkan nama dan kelas
+export async function searchTunggakan(nama: string, kelas: string) {
+  const { data, error } = await supabase
+    .from('tunggakan')
+    .select('*')
+    .ilike('nama', nama) // case-insensitive
+    .eq('kelas', kelas);
+
+  if (error) throw error;
+  return { data };
+}
+
+// Upload file raport ke storage dan dapatkan URL publiknya
 export async function uploadRaportFile(file: File, studentName: string, kelas: string): Promise<string> {
   const filename = `${Date.now()}-${studentName.replace(/\s+/g, '_')}.pdf`;
   const filePath = `raports/${kelas}/${filename}`;
@@ -102,9 +108,7 @@ export async function uploadRaportFile(file: File, studentName: string, kelas: s
   return publicUrl;
 }
 
-/**
- * Simpan metadata raport ke database
- */
+// Simpan data raport ke database
 export async function saveRaportToDatabase(nama: string, kelas: string, fileUrl: string): Promise<void> {
   const { error } = await supabase
     .from('raport')
@@ -113,9 +117,17 @@ export async function saveRaportToDatabase(nama: string, kelas: string, fileUrl:
   if (error) throw error;
 }
 
-/**
- * Ambil semua tunggakan
- */
+// Hapus data raport
+export async function deleteRaport(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('raport')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
+// Ambil data tunggakan
 export async function getTunggakan(): Promise<TunggakanData[]> {
   const { data, error } = await supabase
     .from('tunggakan')
@@ -126,9 +138,7 @@ export async function getTunggakan(): Promise<TunggakanData[]> {
   return data || [];
 }
 
-/**
- * Tambahkan data tunggakan
- */
+// Tambah data tunggakan
 export async function addTunggakan(nama: string, jumlah: number, kelas: string): Promise<void> {
   const { error } = await supabase
     .from('tunggakan')
@@ -137,9 +147,7 @@ export async function addTunggakan(nama: string, jumlah: number, kelas: string):
   if (error) throw error;
 }
 
-/**
- * Hapus data tunggakan
- */
+// Hapus data tunggakan
 export async function deleteTunggakan(id: string): Promise<void> {
   const { error } = await supabase
     .from('tunggakan')
@@ -149,9 +157,7 @@ export async function deleteTunggakan(id: string): Promise<void> {
   if (error) throw error;
 }
 
-/**
- * Upload ZIP berisi raport
- */
+// Proses upload file ZIP berisi banyak PDF raport
 export async function processZipUpload(zipFile: File, kelas: string): Promise<{ success: number; errors: string[] }> {
   const results = { success: 0, errors: [] as string[] };
 

@@ -4,25 +4,34 @@ import { Layout } from './components/Layout';
 import { SearchRaport } from './components/SearchRaport';
 import { LoginForm } from './components/LoginForm';
 import { TeacherDashboard } from './components/TeacherDashboard';
+import { RaportListPage } from './components/RaportListPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
   return (
     <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<SearchRaport />} />
-          <Route path="/login" element={<LoginForm />} />
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<SearchRaport />} />
+          <Route path="login" element={<LoginForm />} />
           <Route
-            path="/dashboard"
+            path="dashboard"
             element={
               <ProtectedRoute>
                 <TeacherDashboard />
               </ProtectedRoute>
             }
           />
-        </Routes>
-      </Layout>
+          <Route
+            path="dashboard/raport"
+            element={
+              <ProtectedRoute>
+                <RaportListPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+      </Routes>
     </Router>
   );
 }
