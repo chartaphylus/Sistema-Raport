@@ -4,12 +4,13 @@ import { searchRaports, type RaportData } from '../services/raportService';
 
 export function SearchRaport() {
   const [query, setQuery] = useState('');
+  const [kelas, setKelas] = useState(''); // 🏷️ filter kelas
   const [raports, setRaports] = useState<RaportData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async () => {
-    if (!query.trim()) {
+    if (!query.trim() && !kelas) {
       setRaports([]);
       return;
     }
@@ -18,7 +19,7 @@ export function SearchRaport() {
     setError(null);
 
     try {
-      const { data } = await searchRaports(query, 1, 50);
+      const { data } = await searchRaports(query, 1, 50, kelas); 
       setRaports(data);
     } catch (err) {
       setError('Gagal memuat data raport. Silakan coba lagi.');
@@ -63,30 +64,51 @@ export function SearchRaport() {
           Cari Raport Santri Rabbaani Islamic School
         </h1>
         <p className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto px-4">
-          Masukkan nama santri untuk mencari dan mengunduh raport.
+          Masukkan nama santri dan pilih kelas untuk mencari serta mengunduh raport.
         </p>
       </div>
 
       <div className="bg-white rounded-2xl shadow-xl border border-green-100 overflow-hidden">
         <div className="p-4 sm:p-8">
           {/* 🔍 Search Box */}
-          <div className="relative flex mb-6">
-            <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <div className="relative flex flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Masukkan nama lengkap santri..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                className="block w-full pl-10 sm:pl-12 pr-20 py-3 sm:py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base sm:text-lg placeholder-gray-400 bg-gray-50 focus:bg-white transition-all"
+              />
             </div>
-            <input
-              type="text"
-              placeholder="Masukkan nama lengkap santri..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="block w-full pl-10 sm:pl-12 pr-20 py-3 sm:py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base sm:text-lg placeholder-gray-400 bg-gray-50 focus:bg-white transition-all"
-            />
+
+            <select
+              value={kelas}
+              onChange={(e) => setKelas(e.target.value)}
+              className="border border-gray-200 rounded-xl px-4 py-3 sm:py-4 focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base sm:text-lg bg-gray-50 focus:bg-white transition-all"
+            >
+              <option value="">-- Pilih Kelas --</option>
+              <option value="7A">7A</option>
+              <option value="7B">7B</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10A">10A</option>
+              <option value="10B">10B</option>
+              <option value="11">11</option>
+              <option value="12">12</option>
+            </select>
+
             <button
               onClick={handleSearch}
               disabled={loading}
-              className="absolute inset-y-0 right-0 px-4 sm:px-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-r-xl hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 transition-all font-medium text-sm sm:text-base"
-            >
+              className="w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl 
+                        hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 
+                        disabled:opacity-50 transition-all font-medium text-base text-center"
+              >
               {loading ? 'Mencari...' : 'Cari'}
             </button>
           </div>
@@ -146,7 +168,7 @@ export function SearchRaport() {
                   ))}
                 </div>
               </>
-            ) : query && !loading ? (
+            ) : query || kelas ? (
               <div className="text-center py-12">
                 <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full mb-4">
                   <Search className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
@@ -155,7 +177,12 @@ export function SearchRaport() {
                   Raport tidak ditemukan
                 </h3>
                 <p className="text-sm sm:text-base text-gray-600 mb-4 px-4">
-                  Tidak ada raport dengan nama "{query}".Silakan periksa kembali ejaan nama yang dimasukkan, atau coba gunakan variasi penulisan lainnya.<span className='font-medium text-gray-900 mb-2 px-4'>Jika masih terdapat tunggakan, segera hubungi bagian administrasi untuk informasi lebih lanjut.</span> 
+                  Tidak ada raport dengan nama "{query}" di kelas "{kelas || 'Semua'}".
+                  <br />
+                  Silakan periksa kembali ejaan nama atau pilih kelas yang benar.
+                  <span className="block font-medium text-gray-900 mt-2">
+                    Jika masih terdapat tunggakan, segera hubungi bagian administrasi.
+                  </span>
                 </p>
               </div>
             ) : (
@@ -167,7 +194,7 @@ export function SearchRaport() {
                   Masukkan Nama Santri
                 </h3>
                 <p className="text-sm sm:text-base text-gray-600 px-4">
-                  Silakan ketik nama santri di atas lalu tekan tombol Cari.
+                  Silakan ketik nama santri di atas lalu pilih kelas kemudian tekan tombol Cari.
                 </p>
               </div>
             )}
